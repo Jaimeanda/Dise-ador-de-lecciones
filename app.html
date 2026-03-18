@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planificador - Ecosistema de Agentes</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f172a, #1e1b4b);
+            color: #f8fafc;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
+        .blob {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            filter: blur(100px);
+            z-index: 0;
+            opacity: 0.5;
+        }
+
+        .blob-1 {
+            background: #8b5cf6;
+            top: -150px;
+            left: -100px;
+            animation: float 8s ease-in-out infinite;
+        }
+
+        .blob-2 {
+            background: #ec4899;
+            bottom: -150px;
+            right: -100px;
+            animation: float 10s ease-in-out infinite reverse;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(40px);
+            }
+        }
+
+        .app-container {
+            position: relative;
+            z-index: 1;
+            width: 90%;
+            max-width: 1000px;
+            max-height: 90vh;
+            overflow-y: auto;
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 8px;
+            text-align: center;
+            background: linear-gradient(to right, #c084fc, #f472b6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        p.subtitle {
+            text-align: center;
+            color: #94a3b8;
+            margin-bottom: 40px;
+        }
+
+        .agents-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .app-container {
+                width: 95%;
+                padding: 20px;
+            }
+
+            .agents-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .agent-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+        }
+
+        .agent-card:hover,
+        .agent-card.active {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .agent-icon {
+            font-size: 2rem;
+            margin-bottom: 12px;
+        }
+
+        .agent-card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+        }
+
+        .agent-card p {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            line-height: 1.5;
+        }
+
+        .control-panel {
+            margin-top: 30px;
+            display: none;
+            animation: fadeIn 0.4s ease;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 24px;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        textarea {
+            width: 100%;
+            height: 100px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 16px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            resize: none;
+            margin-bottom: 16px;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #8b5cf6;
+        }
+
+        button {
+            background: linear-gradient(135deg, #8b5cf6, #d946ef);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .status-log {
+            margin-top: 20px;
+            font-size: 0.85rem;
+            color: #10b981;
+            min-height: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+
+    <div class="app-container">
+        <div class="institution-info" style="text-align: center; margin-bottom: 15px;">
+            <h2 style="color: #c084fc; font-size: 1.5rem; margin-bottom: 5px;">Liceo Fontt</h2>
+            <h3 style="color: #94a3b8; font-size: 1.1rem; font-weight: 500;">Docente: Jaime Landa</h3>
+        </div>
+        <h1>Entorno de Generación</h1>
+        <p class="subtitle">Selecciona un agente para iniciar el flujo de trabajo de la clase.</p>
+
+        <div class="agents-grid">
+            <div class="agent-card" onclick="selectAgent('buscador', this)">
+                <div class="agent-icon">🔍</div>
+                <h3>Buscador</h3>
+                <p>Recolecta información y contenido (PDF, Docs, Web).</p>
+            </div>
+            <div class="agent-card" onclick="selectAgent('creador', this)">
+                <div class="agent-icon">📓</div>
+                <h3>Creador</h3>
+                <p>Crea cuadernos ordenados conectando con NotebookLM.</p>
+            </div>
+            <div class="agent-card" onclick="selectAgent('generador', this)">
+                <div class="agent-icon">⚙️</div>
+                <h3>Generador Notebook</h3>
+                <p>Diseña guías de estudio descargables a partir del contenido.</p>
+            </div>
+            <div class="agent-card" onclick="selectAgent('disenador', this)">
+                <div class="agent-icon">🎨</div>
+                <h3>Diseñador</h3>
+                <p>Aplica formato institucional, estilos y exporta a Word.</p>
+            </div>
+        </div>
+
+        <div class="control-panel" id="controlPanel">
+            <h3 id="panelTitle" style="margin-bottom: 12px; font-weight: 500;"></h3>
+            <textarea id="promptInput"
+                placeholder="Introduce los parámetros o el contexto para el agente..."></textarea>
+            <button id="execBtn" onclick="runAgent()">Iniciar Tarea</button>
+            <div class="status-log" id="statusLog"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentAgent = '';
+        const names = {
+            'buscador': 'Buscador', 'creador': 'Creador', 'generador': 'Generador Notebook', 'disenador': 'Diseñador'
+        };
+
+        function selectAgent(agentId, element) {
+            currentAgent = agentId;
+            document.querySelectorAll('.agent-card').forEach(c => c.classList.remove('active'));
+            element.classList.add('active');
+
+            const panel = document.getElementById('controlPanel');
+            panel.style.display = 'block';
+            document.getElementById('panelTitle').innerText = `Configurar ${names[agentId]}`;
+            document.getElementById('promptInput').value = '';
+            document.getElementById('statusLog').innerText = '';
+        }
+
+        async function runAgent() {
+            const btn = document.getElementById('execBtn');
+            const log = document.getElementById('statusLog');
+            const input = document.getElementById('promptInput').value;
+
+            if (!input.trim()) {
+                log.style.color = '#ef4444';
+                log.innerText = 'Por favor, provee una instrucción o contexto.';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = 'Procesando...';
+
+            if (currentAgent === 'buscador') {
+                // Automatización en cadena (Pipeline) para 'buscador'
+                const pipeline = ['buscador', 'creador', 'generador', 'disenador'];
+                let resultText = '';
+                let currentInput = input; // El input del primer agente es lo que escribió el usuario
+
+                try {
+                    for (const agent of pipeline) {
+                        log.style.color = '#94a3b8';
+                        log.innerText = `Ejecutando automatización: ${names[agent]}...`;
+
+                        const response = await fetch(`/api/${agent}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ prompt: currentInput })
+                        });
+                        const result = await response.json();
+
+                        if (result.status === 'success') {
+                            resultText += `✅ ${names[agent]}:\n${result.data}\n\n`;
+                            // El output de este agente se convierte en el input del siguiente
+                            currentInput = result.data;
+                        } else {
+                            throw new Error(`Fallo en ${names[agent]}: ${result.data || 'Error desconocido'}`);
+                        }
+                        // Pausa larga (15 segundos) entre pasos para evitar el Error 429 (Too many requests) de Gemini gratuito
+                        log.style.color = '#eab308'; // Amarillo
+                        log.innerText = `Generación exitosa. Pausando 15s (Anti-Saturación de API) antes del siguiente paso...`;
+                        await new Promise(r => setTimeout(r, 15000));
+                    }
+
+                    log.style.color = '#10b981';
+                    log.innerText = `✨ Automatización completa:\n\n${resultText}`;
+                } catch (error) {
+                    log.style.color = '#ef4444';
+                    log.innerText = `❌ Error durante la automatización en cadena: ${error.message}`;
+                } finally {
+                    btn.disabled = false;
+                    btn.innerText = 'Iniciar Tarea';
+                }
+            } else {
+                // Ejecución individual para otros agentes
+                log.style.color = '#94a3b8';
+                log.innerText = `Ejecutando ${names[currentAgent]}...`;
+
+                try {
+                    const response = await fetch(`/api/${currentAgent}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ prompt: input })
+                    });
+
+                    const result = await response.json();
+
+                    if (result.status === 'success') {
+                        btn.disabled = false;
+                        btn.innerText = 'Iniciar Tarea';
+                        log.style.color = '#10b981';
+                        log.innerText = `✅ Salida de ${names[currentAgent]}:\n${result.data}`;
+                    } else {
+                        throw new Error('Respuesta inválida del servidor');
+                    }
+                } catch (error) {
+                    btn.disabled = false;
+                    btn.innerText = 'Iniciar Tarea';
+                    log.style.color = '#ef4444';
+                    log.innerText = '❌ Error de conexión con el backend local.';
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>
