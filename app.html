@@ -310,6 +310,9 @@
 
                         if (result.status === 'success') {
                             resultText += `✅ ${names[agent]}:\n${result.data}\n\n`;
+                            if (result.downloads) {
+                                window.lastDownloads = result.downloads; // Guardamos para poner al final
+                            }
                             // El output de este agente se convierte en el input del siguiente
                             currentInput = result.data;
                         } else {
@@ -323,6 +326,32 @@
 
                     log.style.color = '#10b981';
                     log.innerText = `✨ Automatización completa:\n\n${resultText}`;
+                    
+                    if (window.lastDownloads) {
+                        const container = document.createElement('div');
+                        container.style.marginTop = '15px';
+                        container.style.display = 'flex';
+                        container.style.gap = '10px';
+                        
+                        const btnWord = document.createElement('a');
+                        btnWord.href = window.lastDownloads.word;
+                        btnWord.download = '';
+                        btnWord.innerHTML = '📄 Descargar Word';
+                        btnWord.style.cssText = 'padding: 8px 16px; background: #3b82f6; color: white; border-radius: 6px; text-decoration: none;';
+                        container.appendChild(btnWord);
+                        
+                        if (window.lastDownloads.audio) {
+                            const btnAudio = document.createElement('a');
+                            btnAudio.href = window.lastDownloads.audio;
+                            btnAudio.download = '';
+                            btnAudio.innerHTML = '🎵 Descargar Audio MP3';
+                            btnAudio.style.cssText = 'padding: 8px 16px; background: #10b981; color: white; border-radius: 6px; text-decoration: none;';
+                            container.appendChild(btnAudio);
+                        }
+                        
+                        log.appendChild(container);
+                        window.lastDownloads = null;
+                    }
                 } catch (error) {
                     log.style.color = '#ef4444';
                     log.innerText = `❌ Error durante la automatización en cadena: ${error.message}`;
@@ -349,6 +378,31 @@
                         btn.innerText = 'Iniciar Tarea';
                         log.style.color = '#10b981';
                         log.innerText = `✅ Salida de ${names[currentAgent]}:\n${result.data}`;
+                        
+                        if (result.downloads) {
+                            const container = document.createElement('div');
+                            container.style.marginTop = '15px';
+                            container.style.display = 'flex';
+                            container.style.gap = '10px';
+                            
+                            const btnWord = document.createElement('a');
+                            btnWord.href = result.downloads.word;
+                            btnWord.download = '';
+                            btnWord.innerHTML = '📄 Descargar Word';
+                            btnWord.style.cssText = 'padding: 8px 16px; background: #3b82f6; color: white; border-radius: 6px; text-decoration: none;';
+                            container.appendChild(btnWord);
+                            
+                            if (result.downloads.audio) {
+                                const btnAudio = document.createElement('a');
+                                btnAudio.href = result.downloads.audio;
+                                btnAudio.download = '';
+                                btnAudio.innerHTML = '🎵 Descargar Audio MP3';
+                                btnAudio.style.cssText = 'padding: 8px 16px; background: #10b981; color: white; border-radius: 6px; text-decoration: none;';
+                                container.appendChild(btnAudio);
+                            }
+                            
+                            log.appendChild(container);
+                        }
                     } else {
                         throw new Error('Respuesta inválida del servidor');
                     }

@@ -14,6 +14,12 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(__dirname));
 
+const exportsDir = path.join(__dirname, 'exports');
+if (!fs.existsSync(exportsDir)) {
+    fs.mkdirSync(exportsDir);
+}
+app.use('/exports', express.static(exportsDir));
+
 // Inicializamos Gemini API
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
@@ -135,11 +141,10 @@ app.post('/api/disenador', async (req, res) => {
         // Nombre base para archivos (Word y MP3 comparten nombre)
         const timestamp = Date.now();
         const baseName = `Guia_de_Estudio_${timestamp}`;
-        const desktopPath = getDesktopPath();
-        const wordPath = path.join(desktopPath, `${baseName}.docx`);
-        const audioPath = path.join(desktopPath, `${baseName}_Listening.mp3`);
+        const wordPath = path.join(exportsDir, `${baseName}.docx`);
+        const audioPath = path.join(exportsDir, `${baseName}_Listening.mp3`);
 
-        console.log('[Disenador] Ruta del escritorio:', desktopPath);
+        console.log('[Disenador] Exportando a:', exportsDir);
         console.log('[Disenador] Ruta del Word:', wordPath);
 
         // Extraer texto de Reading Comprehension y generar audio
@@ -216,11 +221,16 @@ app.post('/api/disenador', async (req, res) => {
 
         console.log(`[Disenador] Word exportado exitosamente: ${wordPath}`);
 
-        let mensaje = `Documento Word exportado: ${wordPath}`;
-        if (audioGenerated) mensaje += `\nAudio MP3 Listening generado: ${audioPath}`;
-        mensaje += `\n\nResumen:\n${contenidoFinal.substring(0, 300)}...`;
+        let mensaje = `¡Documento generado con éxito!\n\nResumen:\n${contenidoFinal.substring(0, 300)}...`;
 
-        res.json({ status: 'success', data: mensaje });
+        res.json({ 
+            status: 'success', 
+            data: mensaje,
+            downloads: {
+                word: `/exports/${baseName}.docx`,
+                audio: audioGenerated ? `/exports/${baseName}_Listening.mp3` : null
+            }
+        });
     } catch (e) {
         console.error('[Disenador] ERROR:', e.message);
         res.status(500).json({ status: 'error', data: e.message });
